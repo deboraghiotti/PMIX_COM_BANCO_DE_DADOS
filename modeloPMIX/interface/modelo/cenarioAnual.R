@@ -1,7 +1,7 @@
-cenarioSinteticoAnual = function (dados, lags, n) {
-  leitura = read.table (dados, header = TRUE, sep = ";", dec = ",")
-  leitura = leitura[, -1]
-  serieH = matrix (leitura, ncol = 12, byrow = TRUE)
+cenarioSinteticoAnual = function (serieH, lags, n) {
+  # leitura = read.table (dados, header = TRUE, sep = ";", dec = ",")
+  # leitura = leitura[, -1]
+  # serieH = matrix (leitura, ncol = 12, byrow = TRUE)
   serieAnualH = apply (serieH, 1, sum)
   serieHL = log (serieAnualH)
   mediaHL = mean (serieHL)
@@ -10,14 +10,16 @@ cenarioSinteticoAnual = function (dados, lags, n) {
   
   modelo = ARMA (serieHN, lags)
   parametros = modelo$parametros
-  dpRes = modelo$dpRes
+  residuos = modelo$residuos
+  print('teste 1')
+  dpRes =  modelo$dpRes
   c = modelo$constante
   
   serieS = serieSinteticaAnual (parametros, dpRes, c, lags, n)
   serieS = (serieS * dpHL) + mediaHL
   serieS = exp (serieS)
   
-  final = list (serieSintetica = serieS, parametros = parametros)
+  final = list (serieSintetica = serieS, parametros = parametros, residuos = residuos)
   return (final)
 }
 
@@ -28,8 +30,9 @@ ARMA = function (serieAnual, lags) {
   constante = parametros[length(parametros)]
   parametros = parametros[-length(parametros)]
   dpRes = sqrt (modelo$sigma2)
+  residual = modelo$residuals
   
-  final = list (parametros = parametros, dpRes = dpRes, constante = constante)
+  final = list (parametros = parametros, dpRes = dpRes, constante = constante, residuos = residual)
   return (final)
 }
 

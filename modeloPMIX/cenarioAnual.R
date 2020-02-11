@@ -1,6 +1,7 @@
 # MODELAGEM ANUAL
 
 n = 10000
+sistema <<- Sys.info ( )['sysname']
 
 # FUNCAO GENERICA PARA O CENARIO SINTETICO ANUAL
 cenarioSinteticoAnual = function (P, Q) {

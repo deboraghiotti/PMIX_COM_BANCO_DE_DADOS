@@ -1,5 +1,5 @@
-NSGA = function (dados, lags, nP, Pc, Pm, cicloMAX, MAXDiferenca, nS) {
-  entrada = entrada (dados)
+NSGA = function (serieH, lags, nP, Pc, Pm, cicloMAX, MAXDiferenca, nS) {
+  entrada = entrada (serieH)
   saidasPMIX = PMIXs (entrada$serieHN, lags, nP)
   parametrosIniciais = sapply (saidasPMIX, function (x) x$parametros)
   parametrosIniciais = t (parametrosIniciais)

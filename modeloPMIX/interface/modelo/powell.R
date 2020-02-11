@@ -1,5 +1,6 @@
-PMIX = function (dados, lags) {
-  serie = entrada (dados)$serieHN
+PMIX = function (serieH, lags) {
+  #serie = entrada (dados)$serieHN
+  serie = entrada(serieH)$serieHN
   P0 = c (rep (1, 12 * lags[1]), rep (0, 12*lags[2]), rep (1, 12*lags[3]), rep (0, 12*lags[4]))
   parametros = powell (serie, lags, P0)
   
