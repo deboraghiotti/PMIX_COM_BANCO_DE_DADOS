@@ -1,5 +1,6 @@
 source('auxiliar.R')
 library(shinyalert)
+library(plotly)
 navbarPage ("PMIX (p,q,P,Q)",
                   tabPanel ("Dados Historicos",
                             sidebarPanel (
@@ -89,88 +90,65 @@ navbarPage ("PMIX (p,q,P,Q)",
                                                     actionButton("DeletarButton", "Delete", class = "btn-primary",style="background-color:#ff0000;border-color: #ff0000")))))
                             )
                   ),
-                  tabPanel ("Algoritmo",
+                  tabPanel ("Modelo PMIX",
                             sidebarLayout(
                               sidebarPanel (
-                                selectizeInput("estacoes",label = "Escolha a Estacao",choices=""),
-                                hr (),
-                                radioButtons ("tipo", label = "Estimacao de parametros",
-                                              choices = list ("Metodo de Powell" = 1,
-                                                              "Algoritmo Genetico" = 2), 
-                                              selected = 1),
-                                tags$hr ( ),
-                                fluidRow (
-                                  column (width = 3,
-                                          numericInput ("p", label = "p", value = 1, min = 0, max = 12)
+                                titlePanel(h4(strong("Modelo PMIX"),align="center")),
+                                br(),
+                                selectInput ("analise", label = "Local de analise", 
+                                             choices = list ("Estimados" = 1, "Arquivados" = 2),
+                                             selected = "Estimados"),
+                                conditionalPanel (condition ="input.analise == 1",
+                                  hr(),
+                                  div(id = "parametros_PMIX",
+                                  selectizeInput("estacoes",label = "Escolha a Estacao",choices=""),
+                                  hr (),
+                                  radioButtons ("tipo", label = "Estimacao de parametros",
+                                                choices = list ("Metodo de Powell" = 1,
+                                                                "Algoritmo Genetico" = 2), 
+                                                selected = 1,inline=TRUE),
+                                  tags$hr ( ),
+                                  fluidRow (
+                                    column (width = 3,
+                                            numericInput ("p", label = "p", value = 1, min = 0, max = 12)),
+                                    column (width = 3,
+                                            numericInput ("q", label = "q", value = 0, min = 0, max = 12)),
+                                    column (width = 3,
+                                            numericInput ("P", label = "P", value = 0, min = 0, max = 12)),
+                                    column (width = 3,
+                                            numericInput ("Q", label = "Q", value = 0, min = 0, max = 12))
                                   ),
-                                  column (width = 3,
-                                          numericInput ("q", label = "q", value = 0, min = 0, max = 12, width = "70px")
+                                  hr(),
+                                  sliderInput ("nsint", label = "Tamanho da serie sintetica", min = 0, max = 50000, value = 10000, width = "90%"),
+                                  fluidRow (
+                                    column(width = 6,checkboxInput ("volume", "Gerar Volume", TRUE)),
+                                    column(width = 6, checkboxInput ("hurst", "Gerar Hurst", TRUE))
                                   ),
-                                  column (width = 3,
-                                          numericInput ("P", label = "P", value = 0, min = 0, max = 12, width = "70px")
-                                  ),
-                                  column (width = 3,
-                                          numericInput ("Q", label = "Q", value = 0, min = 0, max = 12, width = "70px")
+                                  hr(),
+                                  shinyjs::hidden(
+                                    div(id = "parametros_ag",
+                                    h5(strong("Parametros do Algoritmo Genetico"),align="center"),
+                                    sliderInput ("nPop", label = "Tamanho da populacao", min = 10, max = 100, value = 50, width = "100%"),
+                                    sliderInput ("cicloMax", label = "Ciclo Maximo", min = 0, max = 50000, value = 10000, width = "100%"),
+                                    fluidRow (
+                                      column (width = 6,numericInput ("pC", label = "Probabilidade de cruzamento", value = 80, min = 0, max = 100)),
+                                      column(width = 6, numericInput ("pM", label = "Probabilidade de mutacao", value = 5, min = 0, max = 100))
+                                    ), 
+                                    fluidRow(
+                                      column (width = 6,numericInput ("MAPEdiferencaMAX", label = "MAPEdiferencaMAX", value = 5, min = 0, max = 100)),
+                                      column(width = 6,numericInput ("MAPEavaliacao", label = "MAPEavaliacao", value = 20, min = 0, max = 100))
+                                    ),
+                                    fluidRow(
+                                      column (width = 6,numericInput ("lagAnual", label = "lag Anual", value = 1, min = 1, max = 12)),
+                                      column(width = 6,numericInput ("lagMensal", label = "lag Mensal", value = 1, min = 1, max = 12))
+                                    ),
+                                    checkboxInput ("lagSignificativo", "Lag Significativo", TRUE)
+                                  ))),
+                                  fluidRow( 
+                                  column(6,actionButton ("iniciar", "Iniciar!")),
+                                  column(6,actionButton("limparButton_PMIX", "Limpar", class = "btn-primary",style="background-color:#ff0000;border-color: #ff0000"))
                                   )
                                 ),
-                                hr(),
-                                sliderInput ("nsint", label = "Tamanho da serie sintetica", min = 0, max = 50000, value = 10000, width = "90%"),
-                                fluidRow (
-                                  column(width = 6,checkboxInput ("volume", "Gerar Volume", TRUE)),
-                                  column(width = 6, checkboxInput ("hurst", "Gerar Hurst", TRUE))
-                                ),
-                                hr(),
-                                actionButton("goButton", "Escolher", class = "btn-primary")
-                              ,width = 5),
-                              mainPanel(
-                              )
-                            ),
-                            tags$hr ( ),
-                            fluidRow (
-                              column (width = 4,
-                                      sliderInput ("nPop", label = "Tamanho da populacao", min = 10, max = 100, value = 50, width = "100%"),
-                                      sliderInput ("cicloMax", label = "Ciclo Maximo", min = 0, max = 50000, value = 10000, width = "100%")
-                              ),
-                              column (width = 2,
-                                      numericInput ("pC", label = "Probabilidade de cruzamento", value = 80, min = 0, max = 100, width = "80%"),
-                                      numericInput ("pM", label = "Probabilidade de mutacao", value = 5, min = 0, max = 100, width = "80%")
-                              ), 
-                              column (width = 2,
-                                      numericInput ("MAPEdiferencaMAX", label = "MAPEdiferencaMAX", value = 5, min = 0, max = 100, width = "80%"),
-                                      numericInput ("MAPEavaliacao", label = "MAPEavaliacao", value = 20, min = 0, max = 100, width = "80%")
-                              ),
-                              column (width = 2,
-                                      numericInput ("lagAnual", label = "lag Anual", value = 1, min = 1, max = 12, width = "70px"),
-                                      numericInput ("lagMensal", label = "lag Mensal", value = 1, min = 1, max = 12, width = "70px"),
-                                      checkboxInput ("lagSignificativo", "Lag Significativo", TRUE)
-                              )
-                            )
-                            
-                  ),
-                  tabPanel ("Resultados",
-                            selectInput ("analise", label = "Local de analise", 
-                                         choices = list ("Estimados" = 1, "Arquivados" = 2),
-                                         selected = "Estimados"),
-                            pageWithSidebar (
-                              headerPanel (NULL),
-                              sidebarPanel (
-                                conditionalPanel (condition ="input.analise == 1",
-                                                  verbatimTextOutput ("resultadoGeral"),
-                                                  actionButton ("iniciar", "Iniciar!"),
-                                                  tags$hr ( ),
-                                                  selectInput ("nSerie", "Serie a ser analisada:", choices = 1:50, selected = 50),
-                                                  tags$hr ( ),
-                                                  downloadButton ("downloadSerie", "Download", icon ("save")),
-                                                  tags$hr ( ),
-                                                  selectInput ("nSerieBD", "Serie a ser armazenada no banco de dados:", choices = 1:50, selected = 50),
-                                                  actionButton("armazenarBD","Armazenar",class = "btn-primary"),
-                                                  shinyjs::hidden(
-                                                    span(id = "armazenando_msg", "Armazenando..."),
-                                                    div(id = "error_armazenar",
-                                                        div(br(), tags$b("Error: "), span(id = "error_msg_armazenar"))
-                                                    )
-                                                  )
-                                                  ),
                                 conditionalPanel (condition = "input.analise == 2",
                                                   fileInput ("serieArquivada", "Series a serem analisadas",
                                                              multiple = TRUE,
@@ -187,52 +165,158 @@ navbarPage ("PMIX (p,q,P,Q)",
                                                                selected = ','),
                                                   tags$hr ( ),
                                                   selectInput ("nSerieA", "Serie a ser analisada:", choices = 1:50, selected = 50)
-                                                  )
                                 ),
+    
+                              width = 4),
                               
-                            mainPanel (
-                              tabsetPanel (
-                                tabPanel("Tabela avaliacoes",
-                                         br ( ),
-                                         dataTableOutput ("tabelaAvaliacao")
-                                ),
-                                tabPanel("Graficos series",
-                                         br ( ),
-                                         plotOutput("GraficoSerie"),
-                                         dataTableOutput("tabelaMedias")
-                                ),
-                                tabPanel("Graficos FAC anuais",
-                                         br ( ),
-                                         plotOutput("FACAnuais"),
-                                         dataTableOutput("tabelaAnual"),
-                                         downloadButton ("downloadTabelaAnual", "Download", icon ("save"))
-                                ),
-                                tabPanel("Graficos FAC mensais",
-                                         br ( ),
-                                         selectInput ("lagMensalMAX", "lag mensal analisado:", choices = 1:12, selected = 1),
-                                         plotOutput ("FACMensais"),
-                                         dataTableOutput ("tabelaMensal"),
-                                         downloadButton ("downloadTabelaMensal", "Download", icon ("save"))
-                                ),
-                                tabPanel("Medidas",
-                                         br ( ),
-                                         p (strong ("Calculo do volume util")),
-                                         fluidRow (
-                                           column (width = 6,
-                                                   sliderInput ("Pregularizacao", "Porcentagem de regularizacao", min = 0, max = 100, value = 50, width = "100%")
-                                           ),
-                                           column (width = 6,
-                                                   verbatimTextOutput ("volumeUtil")
-                                           )
-                                         ),
-                                         hr ( ),
-                                         p (strong ("Coeficiente de Hurst")),
-                                         verbatimTextOutput ("hurst")
+                              mainPanel(
+                                h3 (strong ("Resultados"),align = "center"),
+                                hr(),
+                                shinyjs::hidden(
+                                  div(id = "resultados_PMIX",
+                                    verbatimTextOutput ("resultadoGeral"),
+                                    shinyjs::hidden(
+                                      div(id="plotly_avaliacoes",
+                                          hr(),
+                                          h4 (strong ("Grafico: MAPEfacAnual x MAPEfacMensal x MAPE dp"),align = "center"),
+                                          plotlyOutput(outputId = "grafico_avaliacoes"))
+                                    ),
+                                    hr(),
+                                    selectInput ("nSerie", "Serie a ser analisada:", choices = 1:50, selected = 50),
+                                    shinyjs::hidden(
+                                      span(id = "armazenando_msg", "Armazenando..."),
+                                      div(id = "error_armazenar",
+                                          div(br(), tags$b("Error: "), span(id = "error_msg_armazenar"))
+                                      )
+                                    ),
+                                    tabsetPanel (
+                                      tabPanel("Tabela avaliacoes",
+                                               br ( ),
+                                               dataTableOutput ("tabelaAvaliacao")
+                                      ),
+                                      tabPanel("Graficos series",
+                                               br ( ),
+                                               plotOutput("GraficoSerie"),
+                                               dataTableOutput("tabelaMedias")
+                                      ),
+                                      tabPanel("Graficos FAC anuais",
+                                               br ( ),
+                                               plotOutput("FACAnuais"),
+                                               dataTableOutput("tabelaAnual"),
+                                               downloadButton ("downloadTabelaAnual", "Download", icon ("save"))
+                                      ),
+                                      tabPanel("Graficos FAC mensais",
+                                               br ( ),
+                                               selectInput ("lagMensalMAX", "lag mensal analisado:", choices = 1:12, selected = 1),
+                                               plotOutput ("FACMensais"),
+                                               dataTableOutput ("tabelaMensal"),
+                                               downloadButton ("downloadTabelaMensal", "Download", icon ("save"))
+                                      ),
+                                      tabPanel("Medidas",
+                                               br ( ),
+                                               p (strong ("Calculo do volume util")),
+                                               fluidRow (
+                                                 column (width = 6,
+                                                         sliderInput ("Pregularizacao", "Porcentagem de regularizacao", min = 0, max = 100, value = 50, width = "100%")
+                                                 ),
+                                                 column (width = 6,
+                                                         verbatimTextOutput ("volumeUtil")
+                                                 )
+                                               ),
+                                               hr ( ),
+                                               p (strong ("Coeficiente de Hurst")),
+                                               verbatimTextOutput ("hurst")
+                                      )
+                                    ),
+                                    hr(),
+                                    fluidRow( 
+                                      column(width = 2,actionButton("armazenarBD","Armazenar",class = "btn-primary")),
+                                      column(width = 2,downloadButton ("downloadSerie", "Download", icon ("save")))
+                                    )
+                                  )
                                 )
-                              )
-                            )
-                        )    
+                                
+                              ,width = 8)
+                            ),
+                            tags$hr ( )
+                            
                   ),
+            tabPanel("Modelo ARMA",
+                     sidebarLayout(
+                       sidebarPanel(
+                         titlePanel(h3("Modelo ARMA (p,q)",align="center")),
+                         br(),
+                         selectizeInput("estacoes_ARMA",label = "Escolha a Estacao",choices=""),
+                         hr(),
+                         titlePanel(h5(strong("Escolha os lags:"))),
+                         fluidRow(
+                          column(6,numericInput ("p_ARMA", label = "p", value = 1, min = 0, max = 12, width = "70px")),
+                          column(6,numericInput ("q_ARMA", label = "q", value = 0, min = 0, max = 12, width = "70px"))
+                         ),
+                         hr(),
+                         sliderInput ("nsint_ARMA", label = "Tamanho da serie sintetica", min = 0, max = 50000, value = 10000),
+                         hr(),
+                         fluidRow( 
+                          column(6,actionButton("goButton_ARMA", "Iniciar", class = "btn-primary")),
+                          column(6,actionButton("limparButton_ARMA", "Limpar", class = "btn-primary",style="background-color:#ff0000;border-color: #ff0000"))
+                         ),
+                         hr(),
+                         titlePanel(h5(strong("Armazenar Serie:"))),
+                         actionButton("armazenarButton_ARMA", "Armazenar", class = "btn-primary"),
+                         shinyjs::hidden(
+                           span(id = "armazenando_msg_ARMA", "Armazenando..."),
+                           div(id = "error_armazenar_ARMA",
+                               div(br(), tags$b("Error: "), span(id = "error_msg_armazenar_ARMA"))
+                           )
+                         )
+                         
+                       ),
+                       mainPanel(
+                         shinyjs::hidden(
+                           div(id="resultados_ARMA",
+                            tabsetPanel (
+                             tabPanel("Graficos FAC anuais",
+                                      br(),
+                                      plotOutput ("GraficoSerie_ARMA"),
+                                      dataTableOutput("tabelaAnual_ARMA")
+                                      ),
+                             
+                             tabPanel("Avaliacao",
+                                      br ( ),
+                                      h4 (strong ("Tabela de Avaliacoes Historica")),
+                                      dataTableOutput("tabelaAvaliacaoHist_ARMA"),
+                                      hr(),
+                                      h4 (strong ("Tabela de Avaliacoes Sintetica")),
+                                      dataTableOutput("tabelaAvaliacao_ARMA")
+                                      
+                             ),
+                             tabPanel("Medidas",
+                                      br ( ),
+                                      p (strong ("Calculo do volume util")),
+                                      fluidRow (
+                                        column (width = 6,
+                                                sliderInput ("Pregularizacao_ARMA", "Porcentagem de regularizacao", min = 0, max = 100, value = 50, width = "100%")
+                                        ),
+                                        column (width = 6,
+                                                verbatimTextOutput ("volumeUtil_ARMA")
+                                        )
+                                      ),
+                                      
+                                      hr ( ),
+                                      p (strong ("Coeficiente de Hurst")),
+                                      verbatimTextOutput ("hurst_ARMA"),
+                                      
+                                      hr(),
+                                      p (strong ("Soma Residual")),
+                                      verbatimTextOutput ("somaRes_ARMA")
+                             )
+                           )
+                         )
+                        )
+                       )
+                    )
+            ),
+            
             tabPanel("Series Geradas",
                      shinyjs::useShinyjs(),
                      shinyjs::inlineCSS(appCSS),
@@ -315,10 +399,10 @@ navbarPage ("PMIX (p,q,P,Q)",
                                                ),
                                                fluidRow(
                                                  column(12,
-                                                 actionButton("limpar_ss_button", "   Limpar   ", class = "btn-primary"),
-                                                 actionButton("delete_ss_button", "   Deletar   ", class = "btn-primary",style="background-color:#ff0000;border-color: #ff0000")
+                                                        actionButton("limpar_ss_button", "   Limpar   ", class = "btn-primary"),
+                                                        actionButton("delete_ss_button", "   Deletar   ", class = "btn-primary",style="background-color:#ff0000;border-color: #ff0000")
                                                  )
-                                              )
+                                               )
                                            )
                                          )
                                 ),
@@ -392,81 +476,6 @@ navbarPage ("PMIX (p,q,P,Q)",
                               )
                        )
                      )
-                   ),
-            tabPanel("Modelo ARMA",
-                     sidebarLayout(
-                       sidebarPanel(
-                         titlePanel(h3("Modelo ARMA (p,q)",align="center")),
-                         br(),
-                         selectizeInput("estacoes_ARMA",label = "Escolha a Estacao",choices=""),
-                         hr(),
-                         titlePanel(h5(strong("Escolha os lags:"))),
-                         fluidRow(
-                          column(6,numericInput ("p_ARMA", label = "p", value = 1, min = 0, max = 12, width = "70px")),
-                          column(6,numericInput ("q_ARMA", label = "q", value = 0, min = 0, max = 12, width = "70px"))
-                         ),
-                         hr(),
-                         sliderInput ("nsint_ARMA", label = "Tamanho da serie sintetica", min = 0, max = 50000, value = 10000),
-                         hr(),
-                         fluidRow( 
-                          column(6,actionButton("goButton_ARMA", "Iniciar", class = "btn-primary")),
-                          column(6,actionButton("limparButton_ARMA", "Limpar", class = "btn-primary",style="background-color:#ff0000;border-color: #ff0000"))
-                         ),
-                         hr(),
-                         titlePanel(h5(strong("Armazenar Serie:"))),
-                         actionButton("armazenarButton_ARMA", "Armazenar", class = "btn-primary"),
-                         shinyjs::hidden(
-                           span(id = "armazenando_msg_ARMA", "Armazenando..."),
-                           div(id = "error_armazenar_ARMA",
-                               div(br(), tags$b("Error: "), span(id = "error_msg_armazenar_ARMA"))
-                           )
-                         )
-                         
-                       ),
-                       mainPanel(
-                         shinyjs::hidden(
-                           div(id="resultados_ARMA",
-                            tabsetPanel (
-                             tabPanel("Graficos FAC anuais",
-                                      br(),
-                                      plotOutput ("GraficoSerie_ARMA"),
-                                      dataTableOutput("tabelaAnual_ARMA")
-                                      ),
-                             
-                             tabPanel("Avaliacao",
-                                      br ( ),
-                                      h4 (strong ("Tabela de Avaliacoes Historica")),
-                                      dataTableOutput("tabelaAvaliacaoHist_ARMA"),
-                                      hr(),
-                                      h4 (strong ("Tabela de Avaliacoes Sintetica")),
-                                      dataTableOutput("tabelaAvaliacao_ARMA")
-                                      
-                             ),
-                             tabPanel("Medidas",
-                                      br ( ),
-                                      p (strong ("Calculo do volume util")),
-                                      fluidRow (
-                                        column (width = 6,
-                                                sliderInput ("Pregularizacao_ARMA", "Porcentagem de regularizacao", min = 0, max = 100, value = 50, width = "100%")
-                                        ),
-                                        column (width = 6,
-                                                verbatimTextOutput ("volumeUtil_ARMA")
-                                        )
-                                      ),
-                                      
-                                      hr ( ),
-                                      p (strong ("Coeficiente de Hurst")),
-                                      verbatimTextOutput ("hurst_ARMA"),
-                                      
-                                      hr(),
-                                      p (strong ("Soma Residual")),
-                                      verbatimTextOutput ("somaRes_ARMA")
-                             )
-                           )
-                         )
-                        )
-                       )
-                    )
             )
                       
 

@@ -194,14 +194,14 @@ cadastrarSH <- function(fileSH,codigoEstacao){
 buscarSH <- function(codigoEstacao, nomeEstacao){
   if(!is.null(codigoEstacao) && (codigoEstacao != "")){
     query <- paste("CALL ESTACAO_SERIE_HISTORICA(",codigoEstacao,")")
-    print(query)
+    #print(query)
     dadosList<-alterDataBase(query)
     dadosDT <- setDT(dadosList)
     return(dadosDT)
   }else if(!is.null(nomeEstacao) && (nomeEstacao != "")){
     nomeEstacao <- paste("'",nomeEstacao,"'",sep="")
     query <- paste("CALL ESTACAO_SERIE_HISTORICA_NOME(",nomeEstacao,")",sep="")
-    print(query)
+    #print(query)
     dadosList <- alterDataBase(query)
     dadosDT <- setDT(dadosList)
     return(dadosDT)
